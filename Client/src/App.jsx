@@ -10,7 +10,7 @@ export default function App() {
     JSON.parse(localStorage.getItem("selectedUser")) || null,
   );
 
-  const user = localStorage.getItem("user");
+  const user = JSON.parse(localStorage.getItem("user")); // 👈 JSON.parse ചേർത്തു
 
   if (!user) return <Login />;
 
@@ -22,7 +22,11 @@ export default function App() {
         setSelectedUser={setSelectedUser}
       />
 
-      <ChatArea darkMode={darkMode} selectedUser={selectedUser} />
+      <ChatArea
+        darkMode={darkMode}
+        selectedUser={selectedUser}
+        currentUser={user} // 👈 ഇത് add ചെയ്തു
+      />
 
       <RightPanel darkMode={darkMode} />
     </div>

@@ -7,6 +7,8 @@ const { Server } = require("socket.io");
 const { connectDB } = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const messageRoutes = require("./routes/messageRoutes"); // 👈 add
+const Message = require("./models/Message"); // 👈 add
 
 dotenv.config();
 
@@ -35,10 +37,10 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/messages", messageRoutes); 
 
 /* ONLINE USERS MAP */
 const onlineUsers = {};
-
 
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
@@ -47,24 +49,32 @@ io.on("connection", (socket) => {
   socket.on("join", (userId) => {
     onlineUsers[userId] = socket.id;
     console.log("User joined:", userId);
-    console.log("Online Users:", onlineUsers);
   });
 
-  // 2️⃣ Send message
-  socket.on("sendMessage", (data) => {
+  // 2️⃣ Send message - DB-ൽ save ചെയ്യുക 👈
+  socket.on("sendMessage", async (data) => {
     console.log("📩 Message received:", data);
 
-    const receiverSocketId = onlineUsers[data.receiver];
+    try {
+      // DB-ൽ save
+      const saved = await Message.create({
+        sender: data.sender,
+        receiver: data.receiver,
+        text: data.text,
+      });
 
-    console.log("Receiver Socket ID:", receiverSocketId);
+      const receiverSocketId = onlineUsers[data.receiver];
 
-    // send to receiver
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("receiveMessage", data);
+      // receiver online ആണെങ്കിൽ send ചെയ്യുക
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("receiveMessage", saved);
+      }
+
+      // sender-ക്കും send ചെയ്യുക
+      socket.emit("receiveMessage", saved);
+    } catch (err) {
+      console.log("Message save error:", err);
     }
-
-    // send back to sender (optional)
-    socket.emit("receiveMessage", data);
   });
 
   // 3️⃣ Disconnect
@@ -77,8 +87,6 @@ io.on("connection", (socket) => {
         break;
       }
     }
-
-    console.log("Updated Online Users:", onlineUsers);
   });
 });
 

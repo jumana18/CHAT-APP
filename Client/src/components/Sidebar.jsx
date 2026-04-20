@@ -6,6 +6,7 @@ import {
   Edit,
   Sun,
   Moon,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -20,7 +21,13 @@ export default function Sidebar({ darkMode, setDarkMode, setSelectedUser }) {
 
   const [users, setUsers] = useState([]);
 
-  // fetch users
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("selectedUser");
+    window.location.href = "/login";
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -135,7 +142,6 @@ export default function Sidebar({ darkMode, setDarkMode, setSelectedUser }) {
             alt="profile"
             className="w-10 h-10 rounded-full object-cover"
           />
-
           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></span>
         </div>
 
@@ -150,6 +156,7 @@ export default function Sidebar({ darkMode, setDarkMode, setSelectedUser }) {
           </p>
         </div>
 
+        {/* Dark Mode Toggle */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className={`p-2 rounded-full transition ${
@@ -159,6 +166,19 @@ export default function Sidebar({ darkMode, setDarkMode, setSelectedUser }) {
           }`}
         >
           {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className={`p-2 rounded-full transition ${
+            darkMode
+              ? "hover:bg-slate-800 text-red-400"
+              : "hover:bg-emerald-100 text-red-500"
+          }`}
+          title="Logout"
+        >
+          <LogOut size={18} />
         </button>
       </div>
     </aside>

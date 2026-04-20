@@ -1,6 +1,7 @@
 import { connectSocket, getSocket } from "../socket";
 import { useState, useEffect } from "react";
 import { Phone, Video, MoreVertical, Plus, Smile, Send } from "lucide-react";
+import axios from "axios";
 
 export default function ChatArea({ darkMode, selectedUser, currentUser }) {
   const [message, setMessage] = useState("");
@@ -12,6 +13,26 @@ export default function ChatArea({ darkMode, selectedUser, currentUser }) {
       connectSocket(currentUser._id);
     }
   }, [currentUser]);
+
+  // 📜 LOAD OLD MESSAGES
+  useEffect(() => {
+    if (!selectedUser) return;
+
+    const fetchMessages = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const { data } = await axios.get(
+          `http://localhost:5000/api/messages/${selectedUser._id}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        setMessages(data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchMessages();
+  }, [selectedUser]);
 
   // 📩 RECEIVE MESSAGES
   useEffect(() => {
@@ -29,8 +50,6 @@ export default function ChatArea({ darkMode, selectedUser, currentUser }) {
 
   // 📤 SEND MESSAGE
   const sendMessage = () => {
-    console.log("SEND BUTTON CLICKED");
-
     if (!message.trim() || !selectedUser || !currentUser) return;
 
     const socket = getSocket();
@@ -43,10 +62,6 @@ export default function ChatArea({ darkMode, selectedUser, currentUser }) {
     };
 
     socket.emit("sendMessage", msgData);
-
-    // instant UI update
-    setMessages((prev) => [...prev, msgData]);
-
     setMessage("");
   };
 
@@ -138,6 +153,7 @@ export default function ChatArea({ darkMode, selectedUser, currentUser }) {
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Type your message..."
             className="flex-1 bg-transparent outline-none"
           />
